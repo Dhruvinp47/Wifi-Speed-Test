@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Wi-Fi Speed Test</title>
+<style>
+  body {
+    font-family: Arial, sans-serif;
+    text-align: center;
+    padding: 50px;
+    background: #cdd4db;
+  }
+
+  h1 { margin-bottom: 20px; }
+
+  button {
+    padding: 10px 20px;
+    font-size: 16px;
+    cursor: pointer;
+  }
+
+  #result {
+    margin-top: 30px;
+    font-size: 18px;
+  }
+
+  .bar {
+    margin-top: 10px;
+    width: 80%;
+    height: 20px;
+    background: #ddd;
+    border-radius: 10px;
+    overflow: hidden;
+    margin-left: auto;
+    margin-right: auto;
+  }
+
+  .progress {
+    height: 100%;
+    width: 0%;
+    background: #4caf50;
+    border-radius: 10px;
+  }
+</style>
+</head>
+<body>
+
+<h1>Wi-Fi Speed Test</h1>
+<button id="startTest">Start Test</button>
+
+<div class="bar"><div id="downloadBar" class="progress"></div></div>
+<div id="result"></div>
+
+<script>
+const button = document.getElementById('startTest');
+const resultDiv = document.getElementById('result');
+const downloadBar = document.getElementById('downloadBar');
+
+button.addEventListener('click', async () => {
+    button.disabled = true;
+    resultDiv.textContent = "Testing download speed...";
+    downloadBar.style.width = "0%";
+
+    const downloadSpeed = await testDownloadSpeed();
+    resultDiv.textContent = `Approximate Download Speed: ${downloadSpeed.toFixed(2)} Mbps`;
+
+    button.disabled = false;
+});
+
+async function testDownloadSpeed() {
+    const fileUrl = "https://upload.wikimedia.org/wikipedia/commons/3/3f/Fronalpstock_big.jpg"; // ~1.2 MB
+    const fileSizeBytes = 1250000; // approx size
+    const startTime = performance.now();
+
+    return new Promise((resolve) => {
+        const xhr = new XMLHttpRequest();
+        xhr.open("GET", fileUrl, true);
+        xhr.responseType = "blob";
+
+        xhr.onprogress = (event) => {
+            if (event.lengthComputable) {
+                const percent = (event.loaded / event.total) * 100;
+                downloadBar.style.width = percent + "%";
+            }
+        };
+
+        xhr.onload = () => {
+            const endTime = performance.now();
+            const durationSec = (endTime - startTime) / 1000;
+            const bitsLoaded = fileSizeBytes * 8;
+            const speedBps = bitsLoaded / durationSec;
+            const speedMbps = speedBps / (1024 * 1024);
+            resolve(speedMbps);
+        };
+
+        xhr.onerror = () => {
+            resultDiv.textContent = "Error testing speed!";
+            resolve(0);
+        };
+
+        xhr.send();
+    });
+}
+</script>
+
+</body>
+</html>
